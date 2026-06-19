@@ -4,12 +4,16 @@ A Python simulator for the four required CPU scheduling algorithms plus several
 extensions, with a Tkinter GUI, Matplotlib Gantt charts, automatic algorithm
 comparison and CSV/PNG export.
 
-## Requirements
+## Dependencies
 
 * **Python 3.x** (developed and tested on 3.14)
 * **Tkinter** — bundled with the standard Python installer on Windows/macOS;
   on Debian/Ubuntu install with `sudo apt install python3-tk`
-* **Matplotlib** — `pip install matplotlib`
+* **Matplotlib** — install with:
+
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 No other third-party packages are needed (CSV export uses the standard library,
 so Pandas is **not** required).
@@ -38,9 +42,11 @@ python test_scheduler.py
 4. **Run Selected Algorithm** draws the Gantt chart and fills the per-process
    metrics table with Start, Completion, Waiting, Turnaround and Response times,
    plus the averages, CPU utilisation and throughput.
-5. **Compare All Algorithms** runs every algorithm on the same workload and
-   shows a grouped bar chart and a comparison table (the lowest average waiting
-   time is highlighted in green).
+5. **Run All Algorithms** runs every algorithm on the same workload and fills
+   two tabs: the **Comparison** tab (a grouped bar chart and a comparison table,
+   with the lowest average waiting time highlighted in green) and the **All
+   Gantt Charts** tab (all six schedules stacked on one shared time axis, where
+   each process keeps the same colour across every chart for easy comparison).
 6. **Export Results (CSV)** saves the current table and averages; **Save Chart
    (PNG)** saves the chart on the visible tab.
 

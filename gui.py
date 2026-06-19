@@ -5,9 +5,10 @@ The window is split into two halves:
 
 * Left  - an editable table of processes plus the controls used to add, edit,
           remove, randomise and run them.
-* Right - a tabbed results area showing the Gantt chart and per-process
-          metrics on one tab, and an automatic comparison of every algorithm
-          on the other.
+* Right - a tabbed results area with three tabs: the Gantt chart and
+          per-process metrics for a single algorithm, an automatic statistical
+          comparison of every algorithm, and all six Gantt charts stacked on a
+          shared time axis for visual comparison.
 
 All of the actual scheduling is done by scheduler.py; this file is only
 concerned with presenting the inputs and results.
@@ -22,6 +23,7 @@ from tkinter import ttk, messagebox, filedialog
 import matplotlib
 matplotlib.use("TkAgg")  # render Matplotlib figures inside Tkinter
 from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import scheduler
@@ -152,7 +154,7 @@ class SchedulerApp(tk.Tk):
         run.pack(fill="x", pady=(8, 2))
         ttk.Button(run, text="Run Selected Algorithm",
                    command=self._run_selected).pack(fill="x", pady=1)
-        ttk.Button(run, text="Compare All Algorithms",
+        ttk.Button(run, text="Run All Algorithms",
                    command=self._compare_all).pack(fill="x", pady=1)
 
         export = ttk.Frame(left)
@@ -229,8 +231,17 @@ class SchedulerApp(tk.Tk):
         ttk.Label(tab2, text="Green row = lowest average waiting time.",
                   foreground="#666").pack(anchor="w", pady=(4, 0))
 
+        # ----- Tab 3: all Gantt charts stacked together -------------------
+        tab3 = ttk.Frame(self.notebook, padding=6)
+        self.notebook.add(tab3, text="All Gantt Charts")
+
+        self.all_fig = Figure(figsize=(7, 6.2), dpi=100)
+        self.all_canvas = FigureCanvasTkAgg(self.all_fig, master=tab3)
+        self.all_canvas.get_tk_widget().pack(fill="both", expand=True)
+
         self._draw_gantt(None)
         self._draw_comparison(None)
+        self._draw_all_gantts(None)
 
     # ------------------------------------------------------------------
     # Process table management
@@ -367,13 +378,14 @@ class SchedulerApp(tk.Tk):
 
     def _compare_all(self):
         if not self.processes:
-            messagebox.showinfo("Compare", "Add at least one process first.")
+            messagebox.showinfo("Run All", "Add at least one process first.")
             return
         results = scheduler.compare_all(self.processes, self._quantum())
         self.comparison_results = results
         self._draw_comparison(results)
         self._fill_comparison_table(results)
-        self.notebook.select(1)
+        self._draw_all_gantts(results)
+        self.notebook.select(2)  # show the stacked Gantt charts (the new view)
 
     # ------------------------------------------------------------------
     # Drawing / displaying results
@@ -474,6 +486,52 @@ class SchedulerApp(tk.Tk):
                         f"{r.avg_turnaround:.2f}", f"{r.avg_response:.2f}",
                         f"{r.cpu_utilization:.1f}", f"{r.throughput:.3f}"))
 
+    def _draw_all_gantts(self, results):
+        """Stack every algorithm's Gantt chart on one shared time axis.
+
+        Each algorithm gets its own row, all rows share the same x-axis so the
+        schedules line up for visual comparison, and a process keeps the same
+        colour across every row (handled by ``_color_for``).
+        """
+        self.all_fig.clear()
+
+        if not results:
+            ax = self.all_fig.add_subplot(111)
+            ax.text(0.5, 0.5, "Click 'Run All Algorithms' to see every schedule",
+                    ha="center", va="center", fontsize=11, color="#888")
+            ax.axis("off")
+            self.all_canvas.draw()
+            return
+
+        max_time = max((r.gantt[-1][2] for r in results if r.gantt), default=1)
+        rows = self.all_fig.subplots(len(results), 1, sharex=True,
+                                     squeeze=False)
+        axes = [row[0] for row in rows]
+
+        for ax, result in zip(axes, results):
+            for label, start, end in result.gantt:
+                is_idle = label == IDLE_LABEL
+                ax.barh(0, end - start, left=start, height=0.6,
+                        color=self._color_for(label), edgecolor="black",
+                        linewidth=0.6, hatch="//" if is_idle else None)
+                ax.text((start + end) / 2, 0, label, ha="center", va="center",
+                        fontsize=7, color="#333" if is_idle else "black")
+            ax.set_yticks([])
+            ax.set_ylim(-0.5, 0.5)
+            ax.set_xlim(0, max_time)
+            ax.set_ylabel(
+                f"{SHORT_NAMES.get(result.algorithm, result.algorithm)}\n"
+                f"wait {result.avg_waiting:.1f}",
+                rotation=0, ha="right", va="center", fontsize=8)
+            ax.grid(axis="x", linestyle=":", alpha=0.4)
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.label_outer()  # only the bottom row shows the time tick labels
+
+        axes[-1].set_xlabel("Time")
+        self.all_fig.suptitle("Gantt Charts — All Algorithms", fontsize=11)
+        self.all_fig.tight_layout(rect=(0, 0, 1, 0.97))
+        self.all_canvas.draw()
+
     # ------------------------------------------------------------------
     # Export
     # ------------------------------------------------------------------
@@ -520,10 +578,11 @@ class SchedulerApp(tk.Tk):
 
     def _save_chart(self):
         # Save whichever tab is currently in front.
-        if self.notebook.index(self.notebook.select()) == 0:
-            fig, name = self.gantt_fig, "gantt_chart.png"
-        else:
-            fig, name = self.cmp_fig, "comparison_chart.png"
+        fig, name = {
+            0: (self.gantt_fig, "gantt_chart.png"),
+            1: (self.cmp_fig, "comparison_chart.png"),
+            2: (self.all_fig, "all_gantt_charts.png"),
+        }[self.notebook.index(self.notebook.select())]
         path = filedialog.asksaveasfilename(
             defaultextension=".png", initialfile=name,
             filetypes=[("PNG image", "*.png"), ("All files", "*.*")])
