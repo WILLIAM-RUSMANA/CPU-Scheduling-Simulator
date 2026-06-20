@@ -50,9 +50,9 @@ python test_scheduler.py
 6. **Export Results (CSV)** saves the current table and averages; **Save Chart
    (PNG)** saves the chart on the visible tab.
 
-## Files
+## Files informnation
 
-| File                 | Responsibility                                             |
+| File                 | Purpose                                             |
 |----------------------|------------------------------------------------------------|
 | `scheduler.py`       | Pure scheduling engine: process model, all algorithms, metrics. No UI. |
 | `gui.py`             | Tkinter interface with embedded Matplotlib charts.         |
@@ -90,15 +90,6 @@ Priority Scheduling, in its non-preemptive form, allocates the CPU to the proces
 * Round Robin follows the standard convention: processes that arrive while a
   time slice is running are queued *before* the just-preempted process.
 
-## How the requirements are covered
-
-**Part 1 (core):** FCFS, SJF, Round Robin and Priority; user input of Process
-ID / Arrival / Burst / Priority; execution order, waiting time, turnaround time
-and their averages; a Gantt chart visualisation.
-
-**Part 2 (advanced):** the project includes **six** of the optional features —
-a full GUI, random workload generation, automatic algorithm comparison, SRTF,
-performance-statistics visualisation (bar charts), and CSV/PNG export.
 
 ## Design notes
 
@@ -110,10 +101,7 @@ instead of stepping one unit at a time. The GUI keeps a single list of
 `Process` objects as the source of truth and rebuilds the on-screen table from
 it after every change.
 
-## Academic-integrity note
 
-This project was developed with AI assistance. Before submitting you **must**
-read through every file and make sure you can explain it, since the assignment
-requires that you understand all submitted code and disclose AI usage honestly
-in your reflection report. The `test_scheduler.py` file is a good starting
-point for understanding what each algorithm is expected to produce.
+## AI contribution notice
+
+This project was developed with AI.
