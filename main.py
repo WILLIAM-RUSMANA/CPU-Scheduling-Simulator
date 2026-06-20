@@ -59,25 +59,26 @@ def format_gantt(result) -> str:
     return f"{bar}\n{top}\n{bar}\n{axis}"
 
 
-def print_result(result) -> None:
-    print("=" * 70)
-    title = result.algorithm
-    if result.quantum is not None:
-        title += f"   (time quantum = {result.quantum})"
-    print(title)
-    print("=" * 70)
-    print(format_table(result))
-    print()
-    print("Gantt chart:")
-    print(format_gantt(result))
-    print()
-    print(f"Execution order      : {' -> '.join(result.execution_order)}")
-    print(f"Average waiting time : {result.avg_waiting:.2f}")
-    print(f"Average turnaround   : {result.avg_turnaround:.2f}")
-    print(f"Average response     : {result.avg_response:.2f}")
-    print(f"CPU utilization      : {result.cpu_utilization:.1f}%")
-    print(f"Throughput           : {result.throughput:.3f} processes/unit")
-    print()
+def print_results(results) -> None:
+    for result in results:
+        print("=" * 70)
+        title = result.algorithm
+        if result.quantum is not None:
+            title += f"   (time quantum = {result.quantum})"
+        print(title)
+        print("=" * 70)
+        print(format_table(result))
+        print()
+        print("Gantt chart:")
+        print(format_gantt(result))
+        print()
+        print(f"Execution order      : {' -> '.join(result.execution_order)}")
+        print(f"Average waiting time : {result.avg_waiting:.2f}")
+        print(f"Average turnaround   : {result.avg_turnaround:.2f}")
+        print(f"Average response     : {result.avg_response:.2f}")
+        print(f"CPU utilization      : {result.cpu_utilization:.1f}%")
+        print(f"Throughput           : {result.throughput:.3f} processes/unit")
+        print()
 
 
 def run_cli() -> None:
@@ -97,14 +98,13 @@ def run_cli() -> None:
     print()
 
     quantum = 2
-    for name in scheduler.ALGORITHMS:
-        print_result(scheduler.run_algorithm(name, workload, quantum))
-
+    # *f: Fixed double call issue (from 12 simulation call to 6)
+    results = scheduler.compare_all(workload, quantum)
+    print_results(results)
     # Side-by-side comparison summary.
     print("=" * 70)
     print("COMPARISON SUMMARY (lower waiting/turnaround is better)")
     print("=" * 70)
-    results = scheduler.compare_all(workload, quantum)
     header = f"{'Algorithm':<26}{'AvgWait':>9}{'AvgTAT':>9}{'AvgResp':>9}{'CPU%':>8}"
     print(header)
     print("-" * len(header))

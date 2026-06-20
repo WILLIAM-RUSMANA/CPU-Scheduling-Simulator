@@ -261,7 +261,7 @@ class SchedulerApp(tk.Tk):
         return f"P{n}"
 
     def _read_form(self):
-        """Validate and return (pid, arrival, burst, priority) from the form."""
+        """Validate and return a Process from the form."""
         pid = self.var_pid.get().strip()
         if not pid:
             raise ValueError("Process ID cannot be empty.")
@@ -272,15 +272,20 @@ class SchedulerApp(tk.Tk):
         except ValueError:
             raise ValueError("Arrival, Burst and Priority must be integers.")
         # Reuse the model's own validation (arrival >= 0, burst > 0).
-        Process(pid, arrival, burst, priority)
-        return pid, arrival, burst, priority
+        # *f: Fixed Process for validation by returning a process rather than a tuple
+        proc = Process(pid, arrival, burst, priority)
+        return proc
 
     def _add_process(self):
         try:
-            pid, arrival, burst, priority = self._read_form()
-            if any(p.pid == pid for p in self.processes):
-                raise ValueError(f"A process with id '{pid}' already exists.")
-            self.processes.append(Process(pid, arrival, burst, priority))
+            # pid, arrival, burst, priority = self._read_form()
+            # if any(p.pid == pid for p in self.processes):
+            #     raise ValueError(f"A process with id '{pid}' already exists.")
+            # self.processes.append(Process(pid, arrival, burst, priority))
+            proc = self._read_form()
+            if any(p.id == proc.pid for p in self.processes):
+                raise ValueError(f"A process with id '{proc.id} already exists")
+            self.processes.append(proc)
         except ValueError as exc:
             messagebox.showerror("Invalid input", str(exc))
             return
@@ -294,15 +299,18 @@ class SchedulerApp(tk.Tk):
             return
         old_pid = sel[0]
         try:
-            pid, arrival, burst, priority = self._read_form()
-            if pid != old_pid and any(p.pid == pid for p in self.processes):
-                raise ValueError(f"A process with id '{pid}' already exists.")
+            # pid, arrival, burst, priority = self._read_form()
+            # if pid != old_pid and any(p.pid == pid for p in self.processes):
+            #     raise ValueError(f"A process with id '{pid}' already exists.")
+            proc = self._read_form()
+            if proc.pid != old_pid and any(proc.pid == p.pid for p in self.processes):
+                raise ValueError(f"A process with id '{proc.pid}' already exists.")
         except ValueError as exc:
             messagebox.showerror("Invalid input", str(exc))
             return
         for i, p in enumerate(self.processes):
             if p.pid == old_pid:
-                self.processes[i] = Process(pid, arrival, burst, priority)
+                self.processes[i] = proc
                 break
         self._refresh_process_table()
         self._clear_form()
