@@ -292,9 +292,10 @@ def _simulate_preemptive(processes, select_key, algorithm):
 
         # Run until either this process finishes or the next process arrives,
         # because that is the only moment the decision could change.
-        future_arrivals = [p.arrival for p in procs
-                           if p.arrival > time and remaining[p.pid] > 0]
-        next_event = min(future_arrivals) if future_arrivals else float("inf")
+        next_event = min(
+            (p.arrival for p in procs if p.arrival > time and remaining[p.pid] > 0),
+            default=float("inf"),
+        )
         run_for = min(remaining[chosen.pid], next_event - time)
 
         gantt.append((chosen.pid, time, time + run_for))

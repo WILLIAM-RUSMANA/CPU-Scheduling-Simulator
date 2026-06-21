@@ -12,6 +12,7 @@ import math
 from scheduler import (
     Process, fcfs, sjf, srtf, round_robin,
     priority_scheduling, priority_preemptive, IDLE_LABEL,
+    run_algorithm, compare_all,
 )
 
 
@@ -183,6 +184,68 @@ def test_validation():
         raise AssertionError("expected ValueError for duplicate pids")
     print("Validation            OK")
 
+def test_run_algorithm_dispatch():
+    procs = [Process("P1", arrival=0, burst=4), Process("P2", arrival=1, burst=3)]
+    # Non-RR algorithms should match calling the function directly.
+    direct = fcfs(procs)
+    via_dispatch = run_algorithm("FCFS", procs)
+    assert via_dispatch.gantt == direct.gantt
+    # Round Robin must receive the quantum.
+    rr_direct = round_robin(procs, quantum=2)
+    rr_dispatch = run_algorithm("Round Robin", procs, quantum=2)
+    assert rr_dispatch.gantt == rr_direct.gantt
+    assert rr_dispatch.quantum == 2
+    # Unknown algorithm name must raise.
+    try:
+        run_algorithm("Not A Real Algorithm", procs)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for unknown algorithm name")
+    print("run_algorithm dispatch OK")
+
+
+def test_compare_all():
+    procs = [Process("P1", arrival=0, burst=4), Process("P2", arrival=1, burst=3)]
+    results = compare_all(procs, quantum=2)
+    # One result per registered algorithm, in ALGORITHMS order.
+    assert len(results) == 6
+    names = [r.algorithm for r in results]
+    assert names == [
+        "FCFS", "SJF (Non-preemptive)", "SRTF (Preemptive SJF)",
+        "Round Robin", "Priority (Non-preemptive)", "Priority (Preemptive)",
+    ]
+    # The Round Robin result should have used the quantum we passed in.
+    rr = next(r for r in results if r.algorithm == "Round Robin")
+    assert rr.quantum == 2
+    print("compare_all            OK   %d algorithms" % len(results))
+
+
+def test_round_robin_idle_gap():
+    # P1 arrives at 0, finishes its only slice; P2 doesn't arrive until t=5,
+    # so the CPU must sit idle from t=2 to t=5.
+    procs = [Process("P1", arrival=0, burst=2), Process("P2", arrival=5, burst=2)]
+    r = round_robin(procs, quantum=4)
+    assert r.gantt == [("P1", 0, 2), (IDLE_LABEL, 2, 5), ("P2", 5, 7)]
+    m = metrics_by_pid(r)
+    assert m["P1"].waiting == 0
+    assert m["P2"].waiting == 0  # P2 ran immediately on arrival
+    print("Round Robin (idle gap) OK")
+
+
+def test_priority_preemptive_idle_gap():
+    # Nothing is ready from t=0..3; P1 arrives at 3.
+    procs = [Process("P1", arrival=3, burst=4, priority=1),
+             Process("P2", arrival=10, burst=2, priority=1)]
+    r = priority_preemptive(procs)
+    assert r.gantt[0] == (IDLE_LABEL, 0, 3)
+    m = metrics_by_pid(r)
+    assert m["P1"].completion == 7
+    assert m["P1"].waiting == 0
+    # Idle gap again between P1 finishing (7) and P2 arriving (10).
+    assert (IDLE_LABEL, 7, 10) in r.gantt
+    print("Priority-preempt (idle)OK")
+
 
 def main():
     tests = [
@@ -192,10 +255,14 @@ def main():
         test_srtf,
         test_round_robin,
         test_round_robin_with_arrivals,
+        test_round_robin_idle_gap,
         test_priority_non_preemptive,
         test_priority_preemptive,
+        test_priority_preemptive_idle_gap,
         test_single_process,
         test_validation,
+        test_run_algorithm_dispatch,
+        test_compare_all,
     ]
     print("Running scheduling engine tests\n" + "-" * 40)
     for t in tests:
