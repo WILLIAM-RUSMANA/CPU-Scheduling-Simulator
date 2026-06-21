@@ -540,9 +540,7 @@ class SchedulerApp(tk.Tk):
         self.all_fig.tight_layout(rect=(0, 0, 1, 0.97))
         self.all_canvas.draw()
 
-    # ------------------------------------------------------------------
-    # Export
-    # ------------------------------------------------------------------
+
     def _export_results(self):
         if not self.current_result:
             messagebox.showinfo("Export", "Run an algorithm first.")
@@ -584,6 +582,7 @@ class SchedulerApp(tk.Tk):
             return
         messagebox.showinfo("Export", f"Results saved to:\n{path}")
 
+
     def _save_chart(self):
         # Save whichever tab is currently in front.
         fig, name = {
@@ -603,7 +602,7 @@ class SchedulerApp(tk.Tk):
             return
         messagebox.showinfo("Save chart", f"Chart saved to:\n{path}")
 
-    # ------------------------------------------------------------------
+
     def _load_sample_workload(self):
         """Start with a small workload so the window is not empty."""
         self.processes = scheduler.sample_workload()
