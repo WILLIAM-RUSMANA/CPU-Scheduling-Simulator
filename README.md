@@ -4,6 +4,8 @@ A Python simulator for the four required CPU scheduling algorithms plus several
 extensions, with a Tkinter GUI, Matplotlib Gantt charts, automatic algorithm
 comparison and CSV/PNG export.
 
+![ui](ui-demo.png)
+
 ## Dependencies
 
 * **Python 3.x** (developed and tested on 3.14)
@@ -18,14 +20,12 @@ comparison and CSV/PNG export.
 No other third-party packages are needed (CSV export uses the standard library,
 so Pandas is **not** required).
 
+
 ## How to run
 
 ```bash
 # Graphical interface (default)
 python main.py
-
-# Text-only demonstration in the terminal (no display needed)
-python main.py --cli
 
 # Verify the scheduling engine against textbook examples
 python test_scheduler.py
