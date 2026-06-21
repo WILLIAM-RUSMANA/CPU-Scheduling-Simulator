@@ -282,8 +282,8 @@ class SchedulerApp(tk.Tk):
             #     raise ValueError(f"A process with id '{pid}' already exists.")
             # self.processes.append(Process(pid, arrival, burst, priority))
             proc = self._read_form()
-            if any(p.id == proc.pid for p in self.processes):
-                raise ValueError(f"A process with id '{proc.id} already exists")
+            if any(p.pid == proc.pid for p in self.processes):
+                raise ValueError(f"A process with id '{proc.pid}' already exists")
             self.processes.append(proc)
         except ValueError as exc:
             messagebox.showerror("Invalid input", str(exc))
