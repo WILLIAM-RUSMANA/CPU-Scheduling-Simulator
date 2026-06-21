@@ -7,6 +7,7 @@ implemented correctly. Run it with:
 
     python test_scheduler.py
 """
+import math
 
 from scheduler import (
     Process, fcfs, sjf, srtf, round_robin,
@@ -15,7 +16,7 @@ from scheduler import (
 
 
 def approx(a, b, tol=1e-9):
-    return abs(a - b) < tol
+    return math.isclose(a, b, abs_tol=tol)
 
 
 def metrics_by_pid(result):

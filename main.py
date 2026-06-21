@@ -83,12 +83,7 @@ def print_results(results) -> None:
 
 def run_cli() -> None:
     """Demonstrate every algorithm on one sample workload."""
-    workload = [
-        Process("P1", arrival=0, burst=5, priority=2),
-        Process("P2", arrival=1, burst=3, priority=1),
-        Process("P3", arrival=2, burst=8, priority=4),
-        Process("P4", arrival=3, burst=6, priority=3),
-    ]
+    workload = scheduler.sample_workload()
 
     print("\nCPU SCHEDULING SIMULATOR - command-line demonstration")
     print("Sample workload (priority: smaller number = higher priority):\n")

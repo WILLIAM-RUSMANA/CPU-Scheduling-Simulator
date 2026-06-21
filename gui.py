@@ -52,7 +52,6 @@ class SchedulerApp(tk.Tk):
         # is always rebuilt from it.
         self.processes: list[Process] = []
         self.current_result: scheduler.ScheduleResult | None = None
-        self.comparison_results: list[scheduler.ScheduleResult] | None = None
         self._color_cache: dict[str, object] = {}
         self._cmap = matplotlib.colormaps["tab20"]
 
@@ -389,7 +388,6 @@ class SchedulerApp(tk.Tk):
             messagebox.showinfo("Run All", "Add at least one process first.")
             return
         results = scheduler.compare_all(self.processes, self._quantum())
-        self.comparison_results = results
         self._draw_comparison(results)
         self._fill_comparison_table(results)
         self._draw_all_gantts(results)
@@ -406,6 +404,21 @@ class SchedulerApp(tk.Tk):
             self._color_cache[label] = self._cmap(idx)
         return self._color_cache[label]
 
+    def _draw_bars(self, ax, gantt, linewidth=0.8, fontsize=8):
+        """Draw one Gantt chart's bars+labels onto ``ax``.
+
+        Shared by ``_draw_gantt`` (single chart) and ``_draw_all_gantts``
+        (stacked charts), which only differ cosmetically in line width and
+        label size.
+        """
+        for label, start, end in gantt:
+            is_idle = label == IDLE_LABEL
+            ax.barh(0, end - start, left=start, height=0.6,
+                    color=self._color_for(label), edgecolor="black",
+                    linewidth=linewidth, hatch="//" if is_idle else None)
+            ax.text((start + end) / 2, 0, label, ha="center", va="center",
+                    fontsize=fontsize, color="#333" if is_idle else "black")
+
     def _draw_gantt(self, result):
         self.gantt_fig.clear()
         ax = self.gantt_fig.add_subplot(111)
@@ -417,14 +430,7 @@ class SchedulerApp(tk.Tk):
             self.gantt_canvas.draw()
             return
 
-        for label, start, end in result.gantt:
-            is_idle = label == IDLE_LABEL
-            ax.barh(0, end - start, left=start, height=0.6,
-                    color=self._color_for(label),
-                    edgecolor="black", linewidth=0.8,
-                    hatch="//" if is_idle else None)
-            ax.text((start + end) / 2, 0, label, ha="center", va="center",
-                    fontsize=8, color="#333" if is_idle else "black")
+        self._draw_bars(ax, result.gantt, linewidth=0.8, fontsize=8)
 
         boundaries = sorted({b for _, s, e in result.gantt for b in (s, e)})
         ax.set_xticks(boundaries)
@@ -459,7 +465,7 @@ class SchedulerApp(tk.Tk):
         ax = self.cmp_fig.add_subplot(111)
 
         if not results:
-            ax.text(0.5, 0.5, "Click 'Compare All Algorithms'",
+            ax.text(0.5, 0.5, "Click 'Run All Algorithms'",
                     ha="center", va="center", fontsize=11, color="#888")
             ax.axis("off")
             self.cmp_canvas.draw()
@@ -517,13 +523,7 @@ class SchedulerApp(tk.Tk):
         axes = [row[0] for row in rows]
 
         for ax, result in zip(axes, results):
-            for label, start, end in result.gantt:
-                is_idle = label == IDLE_LABEL
-                ax.barh(0, end - start, left=start, height=0.6,
-                        color=self._color_for(label), edgecolor="black",
-                        linewidth=0.6, hatch="//" if is_idle else None)
-                ax.text((start + end) / 2, 0, label, ha="center", va="center",
-                        fontsize=7, color="#333" if is_idle else "black")
+            self._draw_bars(ax, result.gantt, linewidth=0.6, fontsize=7)
             ax.set_yticks([])
             ax.set_ylim(-0.5, 0.5)
             ax.set_xlim(0, max_time)
@@ -606,12 +606,7 @@ class SchedulerApp(tk.Tk):
     # ------------------------------------------------------------------
     def _load_sample_workload(self):
         """Start with a small workload so the window is not empty."""
-        self.processes = [
-            Process("P1", 0, 5, 2),
-            Process("P2", 1, 3, 1),
-            Process("P3", 2, 8, 4),
-            Process("P4", 3, 6, 3),
-        ]
+        self.processes = scheduler.sample_workload()
         self._refresh_process_table()
         self._clear_form()
 

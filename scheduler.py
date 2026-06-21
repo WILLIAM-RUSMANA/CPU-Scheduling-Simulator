@@ -434,3 +434,13 @@ def generate_random_workload(count=5, max_arrival=10, max_burst=10,
             priority=rng.randint(1, max_priority),
         ))
     return workload
+
+
+def sample_workload() -> list[Process]:
+    """A small, fixed workload used to populate the GUI and CLI on startup."""
+    return [
+        Process("P1", arrival=0, burst=5, priority=2),
+        Process("P2", arrival=1, burst=3, priority=1),
+        Process("P3", arrival=2, burst=8, priority=4),
+        Process("P4", arrival=3, burst=6, priority=3),
+    ]
